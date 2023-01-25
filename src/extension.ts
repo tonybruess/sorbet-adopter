@@ -42,29 +42,29 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	})
 
-	// vscode.workspace.onDidSaveTextDocument(async (document) => {
-	// 	if (isRubyFile(document.fileName)) {
-	// 		// We handle this case below
-	// 		if (vscode.window.activeTextEditor?.document !== document) {
-	// 			output.appendLine(`Active: ${vscode.window.activeTextEditor?.document.fileName}`)
-	// 			output.appendLine(`Saved: ${document.fileName}`)
-	// 			return
-	// 		}
+	vscode.workspace.onDidSaveTextDocument(async (document) => {
+		if (isRubyFile(document.fileName)) {
+			// We handle this case below
+			if (vscode.window.activeTextEditor?.document !== document) {
+				output.appendLine(`Active: ${vscode.window.activeTextEditor?.document.fileName}`)
+				output.appendLine(`Saved: ${document.fileName}`)
+				return
+			}
 
-	// 		const range = new vscode.Range(0, 0, 0, TypedFalse.length)
-	// 		const header = document.getText(range)
+			const range = new vscode.Range(0, 0, 0, TypedFalse.length)
+			const header = document.getText(range)
 	
-	// 		if (header === TypedFalse) {
-	// 			const edit = new vscode.WorkspaceEdit()
-	// 			edit.replace(document.uri, range, TypedAdopter)
+			if (header === TypedFalse) {
+				const edit = new vscode.WorkspaceEdit()
+				edit.replace(document.uri, range, TypedAdopter)
 
-	// 			// Give the "saved" feedback before reverting
-	// 			setTimeout(async () => {
-	// 				await vscode.workspace.applyEdit(edit)
-	// 			}, 1000);
-	// 		}
-	// 	}
-	// })
+				// Give the "saved" feedback before reverting
+				setTimeout(async () => {
+					await vscode.workspace.applyEdit(edit)
+				}, 2000);
+			}
+		}
+	})
 
 	vscode.window.onDidChangeActiveTextEditor(async (editor) => {
 		if (!editor) {
