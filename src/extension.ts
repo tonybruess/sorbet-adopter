@@ -4,8 +4,9 @@ import * as vscode from 'vscode';
 
 let prevEditor: vscode.TextEditor | undefined = undefined
 
-const TypedFalse = "# typed: false"
-const TypedAdopter = "# typed: true adopter"
+const TypedFalse = "# typed: false\n"
+const TypedAdopter = "# typed: true adopter\n"
+const SigilRange = new vscode.Range(0, 0, 1, 0)
 
 function isRubyFile(fileName: string | undefined) {
 	return fileName?.endsWith(".rb")
@@ -30,12 +31,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 	vscode.workspace.onWillSaveTextDocument(async (event) => {
 		if (isRubyFile(event.document.fileName)) {
-			const range = new vscode.Range(0, 0, 0, TypedAdopter.length)
-			const header = event.document.getText(range)
+			const header = event.document.getText(SigilRange)
 	
 			if (header === TypedAdopter) {
 				const edit = new vscode.WorkspaceEdit()
-				edit.replace(event.document.uri, range, TypedFalse)
+				edit.replace(event.document.uri, SigilRange, TypedFalse)
 
 				event.waitUntil(vscode.workspace.applyEdit(edit))
 			}
@@ -51,12 +51,11 @@ export function activate(context: vscode.ExtensionContext) {
 				return
 			}
 
-			const range = new vscode.Range(0, 0, 0, TypedFalse.length)
-			const header = document.getText(range)
+			const header = document.getText(SigilRange)
 	
 			if (header === TypedFalse) {
 				const edit = new vscode.WorkspaceEdit()
-				edit.replace(document.uri, range, TypedAdopter)
+				edit.replace(document.uri, SigilRange, TypedAdopter)
 
 				// Give the "saved" feedback before reverting
 				setTimeout(async () => {
@@ -72,12 +71,11 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		if (prevEditor && isRubyFile(prevEditor.document.fileName)) {
-			const range = new vscode.Range(0, 0, 0, TypedAdopter.length)
-			const header = prevEditor.document.getText(range)
+			const header = prevEditor.document.getText(SigilRange)
 	
 			if (header === TypedAdopter) {
 				const edit = new vscode.WorkspaceEdit()
-				edit.replace(prevEditor.document.uri, range, TypedFalse)
+				edit.replace(prevEditor.document.uri, SigilRange, TypedFalse)
 
 				await vscode.workspace.applyEdit(edit)
 				await prevEditor.document.save()
@@ -85,12 +83,11 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		if (isRubyFile(editor.document.fileName)) {
-			const range = new vscode.Range(0, 0, 0, TypedFalse.length)
-			const header = editor.document.getText(range)
+			const header = editor.document.getText(SigilRange)
 	
 			if (header === TypedFalse) {
 				await editor.edit((editBuilder) => {
-					editBuilder.replace(range, TypedAdopter)
+					editBuilder.replace(SigilRange, TypedAdopter)
 				})
 			}
 		}
