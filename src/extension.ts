@@ -28,24 +28,22 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 	context.subscriptions.push(activateCmd);
 
-	let output = vscode.window.createOutputChannel("Sorbet Adopter");
-
 	vscode.workspace.onWillSaveTextDocument(async (event) => {
 		const document = event.document
 
 		if (isRubyFile(document.fileName)) {
 			const header = document.getText(SigilRange)
 
+			prevSaveFile = document.fileName
+
+			clearTimeout(preSaveTask)
+			preSaveTask = setTimeout(() => {
+				prevSaveFile = undefined
+			}, 100)
+
 			if (header === TypedAdopter) {
 				const edit = new vscode.WorkspaceEdit()
 				edit.replace(document.uri, SigilRange, TypedFalse)
-
-				prevSaveFile = document.fileName
-
-				clearTimeout(preSaveTask)
-				preSaveTask = setTimeout(() => {
-					prevSaveFile = undefined
-				}, 100)
 
 				event.waitUntil(vscode.workspace.applyEdit(edit))
 			}
