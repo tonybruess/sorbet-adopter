@@ -2,7 +2,8 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
-let prevEditor: vscode.TextEditor | undefined = undefined
+let prevSaveFile: string | undefined = undefined
+let preSaveTask: NodeJS.Timeout | undefined = undefined
 
 const TypedFalse = "# typed: false\n"
 const TypedAdopter = "# typed: true adopter\n"
@@ -30,71 +31,44 @@ export function activate(context: vscode.ExtensionContext) {
 	let output = vscode.window.createOutputChannel("Sorbet Adopter");
 
 	vscode.workspace.onWillSaveTextDocument(async (event) => {
-		if (isRubyFile(event.document.fileName)) {
-			const header = event.document.getText(SigilRange)
-	
+		const document = event.document
+
+		if (isRubyFile(document.fileName)) {
+			const header = document.getText(SigilRange)
+
 			if (header === TypedAdopter) {
 				const edit = new vscode.WorkspaceEdit()
-				edit.replace(event.document.uri, SigilRange, TypedFalse)
+				edit.replace(document.uri, SigilRange, TypedFalse)
+
+				prevSaveFile = document.fileName
+
+				clearTimeout(preSaveTask)
+				preSaveTask = setTimeout(() => {
+					prevSaveFile = undefined
+				}, 100)
 
 				event.waitUntil(vscode.workspace.applyEdit(edit))
 			}
 		}
 	})
 
-	vscode.workspace.onDidSaveTextDocument(async (document) => {
-		if (isRubyFile(document.fileName)) {
-			// We handle this case below
-			if (vscode.window.activeTextEditor?.document !== document) {
-				output.appendLine(`Active: ${vscode.window.activeTextEditor?.document.fileName}`)
-				output.appendLine(`Saved: ${document.fileName}`)
+	vscode.workspace.onDidChangeTextDocument(async (event) => {
+		const document = event.document
+
+		if (isRubyFile(document.fileName)) {	
+			if (document.fileName === prevSaveFile) {
 				return
 			}
-
-			const header = document.getText(SigilRange)
 	
+			const header = document.getText(SigilRange)
+
 			if (header === TypedFalse) {
 				const edit = new vscode.WorkspaceEdit()
 				edit.replace(document.uri, SigilRange, TypedAdopter)
 
-				// Give the "saved" feedback before reverting
-				setTimeout(async () => {
-					await vscode.workspace.applyEdit(edit)
-				}, 2000);
-			}
-		}
-	})
-
-	vscode.window.onDidChangeActiveTextEditor(async (editor) => {
-		if (!editor) {
-			return
-		}
-
-		if (prevEditor && isRubyFile(prevEditor.document.fileName)) {
-			const header = prevEditor.document.getText(SigilRange)
-	
-			if (header === TypedAdopter) {
-				const edit = new vscode.WorkspaceEdit()
-				edit.replace(prevEditor.document.uri, SigilRange, TypedFalse)
-
 				await vscode.workspace.applyEdit(edit)
-				await prevEditor.document.save()
-			}			
-		}
-
-		if (isRubyFile(editor.document.fileName)) {
-			const header = editor.document.getText(SigilRange)
-	
-			if (header === TypedFalse) {
-				await editor.edit((editBuilder) => {
-					editBuilder.replace(SigilRange, TypedAdopter)
-				})
 			}
 		}
-		
-		output.appendLine(`Editor: ${editor.document.fileName}, Prev Editor: ${prevEditor?.document.fileName}`)
-
-		prevEditor = editor
 	})
 }
 
