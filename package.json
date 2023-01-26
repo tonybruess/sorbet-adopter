@@ -24,6 +24,17 @@
       {
         "command": "sorbet-adopter.activate",
         "title": "Sorbet Adopter: Activate"
+      },
+      {
+        "command": "sorbet-adopter.close",
+        "title": "Sorbet Adopter: Close Window"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "sorbet-adopter.close",
+        "key": "cmd+w",
+        "mac": "cmd+w"
       }
     ]
   },
